@@ -2,6 +2,7 @@
 
 import { ReactNode, forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import type { Content } from "@/lib/content";
+import { AlarmStyle, sfx } from "@/lib/sfx";
 
 type Entry = { id: number; node: ReactNode };
 export type SessionHandle = { run: (cmd: string) => void };
@@ -41,13 +42,15 @@ const meter = (level: number, width = 20) => {
 
 type Props = {
   content: Content;
+  user: string;
+  visitor: string;
   active: boolean;
   onExit: () => void;
   onTitle: (title: string) => void;
 };
 
 /** One shell session — each terminal tab owns its own output, history and input. */
-const Session = forwardRef<SessionHandle, Props>(function Session({ content, active, onExit, onTitle }, ref) {
+const Session = forwardRef<SessionHandle, Props>(function Session({ content, user, visitor, active, onExit, onTitle }, ref) {
   const { profile, contact, hr, skills, experience, projects } = content;
   const links = Object.fromEntries(Object.entries(contact).filter(([, v]) => v)) as Record<string, string>;
   const href = (k: string, v: string) => (k === "email" ? `mailto:${v}` : k === "phone" ? `tel:${v}` : v);
@@ -66,7 +69,7 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
 
   const Prompt = ({ cmd }: { cmd: string }) => (
     <div className="row">
-      <span className="c-green">{profile.handle}</span>
+      <span className="c-green">{user}</span>
       <span className="c-muted">@</span>
       <span className="c-cyan">{profile.host}</span>
       <span className="c-muted">:~$ </span>
@@ -77,6 +80,11 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
   const showBanner = useCallback(() => {
     push(
       <pre className="ascii">{BANNER}</pre>,
+      visitor && (
+        <div className="row">
+          <span className="c-green">Hello, {visitor}.</span> <span className="c-muted">Welcome aboard.</span>
+        </div>
+      ),
       <div className="row">
         <span className="c-bold">{profile.role}</span>
         <span className="c-muted"> — {profile.tagline}</span>
@@ -88,7 +96,7 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
       </div>,
       <div className="row">&nbsp;</div>
     );
-  }, [push, profile.role, profile.tagline]);
+  }, [push, profile.role, profile.tagline, visitor]);
 
   // Guard: React StrictMode runs effects twice in dev, which printed the banner twice
   const bannerShown = useRef(false);
@@ -118,6 +126,7 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
     steps.forEach((s, i) =>
       setTimeout(() => {
         const pct = Math.round(((i + 1) / steps.length) * 100);
+        sfx.step(i);
         push(
           <div className="row">
             <span className="c-amber">[{meter(pct)}]</span> <span className="c-muted">{pct}%</span> {s}
@@ -126,6 +135,7 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
       }, (i + 1) * 450)
     );
     setTimeout(() => {
+      sfx.alarm(content.intro.alarmSound as AlarmStyle, content.intro.alarmFile);
       push(<div className="row c-red">ACCESS GRANTED... just kidding. The easier way in is to hire me → type contact</div>);
       setBusy(false);
     }, steps.length * 450 + 500);
@@ -171,7 +181,7 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
       case "about":
       case "whoami":
         if (c === "whoami" && !args.length) {
-          push(<div className="row">{profile.handle} — the better question is <span className="c-green">who is {profile.name.toLowerCase()}?</span> → type about</div>);
+          push(<div className="row">{visitor || user} — the better question is <span className="c-green">who is {profile.name.toLowerCase()}?</span> → type about</div>);
           break;
         }
         push(
@@ -341,8 +351,8 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
 
       case "sudo":
         push(
-          <div className="row c-red">[sudo] password for {profile.handle}: ********</div>,
-          <div className="row c-red">{profile.handle} is not in the sudoers file. This incident will be reported.</div>
+          <div className="row c-red">[sudo] password for {user}: ********</div>,
+          <div className="row c-red">{user} is not in the sudoers file. This incident will be reported.</div>
         );
         break;
 
@@ -386,7 +396,9 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
   }));
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key.length === 1 || e.key === "Backspace") sfx.key();
     if (e.key === "Enter") {
+      sfx.blip();
       if (busy) return;
       exec(input);
       setInput("");
@@ -439,7 +451,7 @@ const Session = forwardRef<SessionHandle, Props>(function Session({ content, act
       </div>
       <div className="prompt-line">
         <span className="prompt-label">
-          <span className="u">{profile.handle}</span>
+          <span className="u">{user}</span>
           <span className="c-muted">@</span>
           <span className="h">{profile.host}</span>
           <span className="path c-muted">:~</span>

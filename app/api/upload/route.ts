@@ -11,6 +11,12 @@ const TYPES: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
   "application/pdf": "pdf",
+  "audio/mpeg": "mp3",
+  "audio/mp3": "mp3",
+  "audio/wav": "wav",
+  "audio/x-wav": "wav",
+  "audio/wave": "wav",
+  "audio/ogg": "ogg",
 };
 const MAX = 8 * 1024 * 1024;
 
@@ -20,7 +26,7 @@ export async function POST(req: Request) {
   const file = (await req.formData()).get("file");
   if (!(file instanceof File)) return NextResponse.json({ error: "No file" }, { status: 400 });
   const ext = TYPES[file.type];
-  if (!ext) return NextResponse.json({ error: "Only JPG, PNG, WEBP, GIF or PDF allowed." }, { status: 415 });
+  if (!ext) return NextResponse.json({ error: "Only JPG, PNG, WEBP, GIF, PDF, MP3, WAV or OGG allowed." }, { status: 415 });
   if (file.size > MAX) return NextResponse.json({ error: "File too large (max 8 MB)." }, { status: 413 });
 
   const name = `${crypto.randomBytes(8).toString("hex")}.${ext}`;

@@ -20,8 +20,9 @@ const hexId = (s: string) => [...s].reduce((h, c) => (h * 33 + c.charCodeAt(0)) 
 const bare = (u: string) => u.replace(/^(https?:\/\/)?(www\.)?/, "").replace(/\/$/, "");
 const d = (ms: number) => ({ "--d": `${ms}ms` }) as CSSProperties;
 
-export default function Landing({ content, onTerminal, onReplay }: {
+export default function Landing({ content, visitor, onTerminal, onReplay }: {
   content: Content;
+  visitor: string;
   onTerminal: () => void;
   onReplay: () => void;
 }) {
@@ -122,7 +123,9 @@ export default function Landing({ content, onTerminal, onReplay }: {
             <div className="pill reveal" style={d(0)}>
               <i /> {site.heroBadge}
             </div>
-            <div className="whoami reveal" style={d(100)}>// whoami</div>
+            <div className="whoami reveal" style={d(100)}>
+              // {visitor ? <><span className="c">hello, {visitor}</span> · </> : null}whoami
+            </div>
             <h1 className="hero-name glitch reveal" style={d(150)} data-text={profile.name}>
               <Scramble text={profile.name} delay={350} />
             </h1>

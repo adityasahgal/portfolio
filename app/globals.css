@@ -109,11 +109,8 @@ html, body {
 .boot .ok { color: var(--green); }
 .boot .warn { color: var(--amber); }
 .boot .err { color: var(--red); text-shadow: 0 0 8px var(--red-glow); }
-.boot.alarm { animation: alarm 0.35s 4 steps(1); }
-@keyframes alarm {
-  0% { background: color-mix(in srgb, #ff2d55 22%, var(--bg)); }
-  50% { background: var(--bg); }
-}
+/* Red flash — toggled by Boot in step with the alarm sound pattern */
+.boot.flash { background: color-mix(in srgb, #ff2d55 24%, var(--bg)); }
 .breach-banner {
   margin-top: 18px;
   font-size: clamp(28px, 7vw, 72px);
@@ -698,3 +695,42 @@ html, body {
 .color { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--p-line); border-radius: 10px; cursor: pointer; }
 .color input[type="color"] { width: 40px; height: 40px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
 .color span { display: flex; flex-direction: column; font-size: 13px; }
+
+/* ---------- intro: sound gate, identify prompt, mute toggle ---------- */
+.gate { position: fixed; inset: 0; display: grid; place-items: center; cursor: pointer; padding: 16px; }
+.gate-box { text-align: center; }
+.gate-title { font-family: var(--font-vt), monospace; font-size: clamp(28px, 6vw, 56px); color: var(--green); text-shadow: 0 0 14px var(--green-dim); letter-spacing: 0.08em; }
+.gate-press { margin-top: 22px; font-size: clamp(12px, 1.6vw, 15px); color: var(--green); letter-spacing: 0.18em; animation: blink 1s steps(1) infinite; }
+.gate-hint { margin-top: 16px; font-size: 12px; color: var(--muted); }
+
+.identify .id-prompt { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 6px; font-size: clamp(14px, 2vw, 20px); }
+.identify .id-label { color: var(--amber); letter-spacing: 0.06em; }
+.identify input {
+  flex: 1; min-width: 200px; max-width: 420px;
+  font: inherit; color: var(--green); background: transparent;
+  border: 0; border-bottom: 1px dashed var(--green-dim); outline: none; padding: 2px 4px;
+  caret-color: var(--green); text-transform: uppercase;
+}
+.identify input::placeholder { color: var(--muted); text-transform: none; }
+.id-hint { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.id-hint b { color: var(--green); font-weight: 400; }
+.id-hint button { font: inherit; color: var(--cyan); background: none; border: 0; border-bottom: 1px dashed currentColor; cursor: pointer; padding: 0; }
+
+.screen .swap { animation: swap-in 0.45s ease-out; }
+@keyframes swap-in { from { opacity: 0; filter: blur(4px); transform: scale(1.04); } }
+
+.sound-btn {
+  position: fixed; left: 16px; bottom: 16px; z-index: 65;
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 16px; cursor: pointer;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  border: 1px solid var(--green-dim);
+  backdrop-filter: blur(6px);
+}
+.sound-btn:hover { border-color: var(--green); box-shadow: 0 0 12px var(--green-ghost); }
+.alarm-pick { margin: 6px 0 16px 26px; display: flex; flex-direction: column; gap: 6px; }
+.alarm-pick .field-label { font-size: 13px; font-weight: 500; color: var(--p-muted); margin-bottom: 4px; }
+.alarm-opt { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--p-line); border-radius: 8px; cursor: pointer; font-size: 14px; }
+.alarm-opt.on { border-color: var(--acc); background: color-mix(in srgb, var(--acc) 8%, transparent); }
+.alarm-opt input { width: auto; accent-color: var(--acc); }
+.alarm-opt span { flex: 1; }

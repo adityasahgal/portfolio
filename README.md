@@ -5,6 +5,8 @@ A hacker-themed developer portfolio built with Next.js. It opens with a cinemati
 ## Features
 
 - **Intro sequence:** a boot log, a "root access granted" alarm, a laptop welcome screen, and a typed mission briefing. All of the text can be edited from the CMS, and the intro can be turned off.
+- **Sound design:** synthesised effects (boot hum, typing clicks, lid servo, CRT power-on) timed to each on-screen event. There are four selectable alarm styles, or you can upload your own sound. A mute toggle is included.
+- **Visitor greeting:** a time-of-day greeting and an automatic "visitor trace" line (browser, OS and city). Share `yoursite.com/?to=Name` to greet someone by name.
 - **Command center:** the main portfolio page. It includes:
   - an interactive particle network
   - a profile photo rendered entirely as live hex code

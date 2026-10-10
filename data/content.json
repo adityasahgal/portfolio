@@ -15,6 +15,7 @@
       "[ok] [ 0.031002] Opening encrypted tunnel -> 10.13.37.1 ... OK",
       "[warn] [ 0.044809] Port scan [22, 80, 443, 1337] ........... 4 OPEN",
       "[warn] [ 0.051117] Handshake: unknown signature — verifying identity",
+      "[warn] [ 0.058802] Visitor trace: {browser} on {os} · {city} ({tz})",
       "[err] [ 0.066420] Firewall ................................ BYPASSED",
       "[err] [ 0.071337] Privilege escalation .................... uid=0(root)"
     ],
@@ -25,7 +26,7 @@
     "briefingTitle": ">> MISSION BRIEFING",
     "briefing": [
       "Target: {name} — {role}.",
-      "You now have shell access. Read the protocol before proceeding:",
+      "Agent {visitor}, you now have shell access. Read the protocol before proceeding:",
       "",
       "  **01** Scroll to browse the full dossier — skills, operations, timeline.",
       "  **02** Press **`** anytime to open a live shell. Start with **help**.",

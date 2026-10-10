@@ -44,6 +44,12 @@ export function onColor(hex: string) {
 
 export const DEFAULT_INTRO = {
   enabled: true,
+  askName: false,
+  sound: true,
+  alarmSound: "redalert",
+  alarmFile: "",
+  identify: "IDENTIFY YOURSELF",
+  hello: "{greeting}, {visitor}",
   bootLines: [
     "[ok] [ 0.000000] Initializing secure kernel ............. OK",
     "[ok] [ 0.004211] Mounting /dev/{handle}/portfolio ......... OK",
@@ -51,6 +57,7 @@ export const DEFAULT_INTRO = {
     "[ok] [ 0.031002] Opening encrypted tunnel -> 10.13.37.1 ... OK",
     "[warn] [ 0.044809] Port scan [22, 80, 443, 1337] ........... 4 OPEN",
     "[warn] [ 0.051117] Handshake: unknown signature — verifying identity",
+    "[warn] [ 0.058802] Visitor trace: {browser} on {os} · {city} ({tz})",
     "[err] [ 0.066420] Firewall ................................ BYPASSED",
     "[err] [ 0.071337] Privilege escalation .................... uid=0(root)",
   ],
@@ -61,7 +68,7 @@ export const DEFAULT_INTRO = {
   briefingTitle: ">> MISSION BRIEFING",
   briefing: [
     "Target: {name} — {role}.",
-    "You now have shell access. Read the protocol before proceeding:",
+    "Agent {visitor}, you now have shell access. Read the protocol before proceeding:",
     "",
     "  **01** Scroll to browse the full dossier — skills, operations, timeline.",
     "  **02** Press **`** anytime to open a live shell. Start with **help**.",
@@ -80,9 +87,19 @@ export const DEFAULT_SITE = {
   footerNote: "All systems nominal",
 };
 
-/** Replace {name}, {role}, {handle}, {location} placeholders. */
-export const fill = (s: string, p: Content["profile"]) =>
-  s.replace(/\{(name|role|handle|location)\}/g, (_, k: "name" | "role" | "handle" | "location") => p[k]);
+const PROFILE_KEYS = ["name", "role", "handle", "location"] as const;
+
+/**
+ * Replace placeholders: profile fields ({name} {role} {handle} {location}),
+ * the visitor ({visitor}, "operator" when unknown) and auto-detected details
+ * ({greeting} {browser} {os} {city} {tz}).
+ */
+export const fill = (s: string, p: Content["profile"], vars: Record<string, string> = {}) =>
+  s.replace(/\{(\w+)\}/g, (m, k: string) => {
+    if ((PROFILE_KEYS as readonly string[]).includes(k)) return p[k as (typeof PROFILE_KEYS)[number]];
+    if (k === "visitor") return vars.visitor || "operator";
+    return vars[k] ?? m;
+  });
 
 export type Content = {
   theme: Theme;
@@ -186,6 +203,12 @@ export function normalize(input: unknown): Content {
     },
     intro: {
       enabled: typeof it.enabled === "boolean" ? it.enabled : true,
+      askName: typeof it.askName === "boolean" ? it.askName : false,
+      sound: typeof it.sound === "boolean" ? it.sound : true,
+      alarmSound: ["klaxon", "redalert", "airraid", "beeper", "custom"].includes(it.alarmSound as string) ? (it.alarmSound as string) : DEFAULT_INTRO.alarmSound,
+      alarmFile: url(it.alarmFile),
+      identify: or(it.identify, DEFAULT_INTRO.identify),
+      hello: or(it.hello, DEFAULT_INTRO.hello),
       bootLines: list(it.bootLines, DEFAULT_INTRO.bootLines).filter((x) => x.trim()),
       alarm: or(it.alarm, DEFAULT_INTRO.alarm),
       welcome: or(it.welcome, DEFAULT_INTRO.welcome),

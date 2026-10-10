@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Content, fill } from "@/lib/content";
+import { sfx, stopAll } from "@/lib/sfx";
 
 type Seg = { t: string; c?: string };
 type Line = Seg[];
@@ -10,20 +11,20 @@ type Line = Seg[];
 const parseLine = (raw: string): Line =>
   raw.split("**").map((t, i) => ({ t, c: i % 2 ? "t-key" : undefined })).filter((s) => s.t);
 
-const script = ({ intro, profile }: Content): Line[] => {
+const script = ({ intro, profile }: Content, vars: Record<string, string>): Line[] => {
   const lines = intro.briefing.map((l) => {
-    const parsed = parseLine(fill(l, profile));
+    const parsed = parseLine(fill(l, profile, vars));
     return parsed.length ? parsed : [{ t: "" }];
   });
   // Dim the line right after the title and the final line, like a classified memo
   if (lines[1]?.length === 1) lines[1][0].c = lines[1][0].c ?? "t-dim";
   const last = lines[lines.length - 1];
   if (last?.length === 1) last[0].c = last[0].c ?? "t-dim";
-  return [[{ t: fill(intro.briefingTitle, profile), c: "t-title" }], ...lines];
+  return [[{ t: fill(intro.briefingTitle, profile, vars), c: "t-title" }], ...lines];
 };
 
-export default function Instructions({ content, onDone }: { content: Content; onDone: () => void }) {
-  const SCRIPT = useMemo(() => script(content), [content]);
+export default function Instructions({ content, vars, onDone }: { content: Content; vars: Record<string, string>; onDone: () => void }) {
+  const SCRIPT = useMemo(() => script(content, vars), [content, vars]);
   const [line, setLine] = useState(0);
   const [chars, setChars] = useState(0);
 
@@ -34,9 +35,11 @@ export default function Instructions({ content, onDone }: { content: Content; on
     if (finished) return;
     const full = lineText(SCRIPT[line]).length;
     if (chars < full) {
+      if (chars % 4 === 0) sfx.key(); // typewriter clicks
       const id = setTimeout(() => setChars((c) => c + 2), 14);
       return () => clearTimeout(id);
     }
+    if (full > 0) sfx.ding(); // carriage return as the line completes
     const id = setTimeout(() => {
       setLine((l) => l + 1);
       setChars(0);
@@ -45,10 +48,15 @@ export default function Instructions({ content, onDone }: { content: Content; on
   }, [line, chars, finished, SCRIPT]);
 
   useEffect(() => {
+    if (finished) sfx.granted();
+  }, [finished]);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter") return;
       if (finished) onDone();
       else {
+        stopAll(); // skipping the typing also cuts its sound
         setLine(SCRIPT.length);
         setChars(0);
       }

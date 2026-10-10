@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
+import { ALARM_STYLES, AlarmStyle, sfx, unlock } from "@/lib/sfx";
 import { Content, DEFAULT_INTRO, Experience, Project, SkillGroup, Stat, THEMES, Theme, newId, onColor, slugify } from "@/lib/content";
 
 const TABS = ["Profile", "HR", "Skills", "Experience", "Projects", "Metrics", "Intro", "Appearance"] as const;
@@ -58,12 +59,13 @@ function Upload({ label, value, onChange, accept }: {
     else setErr(data.error || "Upload failed");
   };
 
-  const isImage = value && !/\.pdf$/i.test(value);
+  const isImage = /\.(jpe?g|png|webp|gif)$/i.test(value) || /^https?:/.test(value) && !/\.(pdf|mp3|wav|ogg)$/i.test(value);
+  const ext = value.split(".").pop()?.toUpperCase();
   return (
     <div className="field">
       <span>{label}</span>
       <div className="upload">
-        {isImage ? <img src={value} alt="" /> : <div className="upload-ph">{value ? "PDF" : "—"}</div>}
+        {isImage ? <img src={value} alt="" /> : <div className="upload-ph">{value ? ext : "—"}</div>}
         <div className="upload-ctl">
           <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Upload a file or paste a URL" />
           <div className="row-btns">
@@ -354,7 +356,44 @@ export default function AdminPanel({ initial }: { initial: Content }) {
                   <input type="checkbox" checked={c.intro.enabled} onChange={(e) => intro("enabled")(e.target.checked)} />
                   Play the intro for first-time visitors (boot → laptop → briefing)
                 </label>
-                <p className="muted small">Placeholders: <code>{"{name}"}</code> <code>{"{role}"}</code> <code>{"{handle}"}</code> <code>{"{location}"}</code></p>
+                <label className="check">
+                  <input type="checkbox" checked={c.intro.sound} onChange={(e) => intro("sound")(e.target.checked)} />
+                  Sound effects (boot hum, typing clicks, alarm siren). Adds a &quot;press any key&quot; screen, which browsers require before audio can play.
+                </label>
+                {c.intro.sound && (
+                  <div className="alarm-pick">
+                    <span className="field-label">Alarm sound (plays with ROOT ACCESS GRANTED)</span>
+                    {(Object.entries(ALARM_STYLES) as [AlarmStyle, string][]).map(([k, label]) => (
+                      <label key={k} className={`alarm-opt ${c.intro.alarmSound === k ? "on" : ""}`}>
+                        <input type="radio" name="alarm" checked={c.intro.alarmSound === k} onChange={() => intro("alarmSound")(k)} />
+                        <span>{label}</span>
+                        <button
+                          type="button"
+                          className="btn sm ghost"
+                          disabled={k === "custom" && !c.intro.alarmFile}
+                          onClick={() => { unlock(); setTimeout(() => sfx.alarm(k, c.intro.alarmFile), 60); }}
+                        >
+                          ▶ Preview
+                        </button>
+                      </label>
+                    ))}
+                    {c.intro.alarmSound === "custom" && (
+                      <Upload label="Custom alarm file (MP3, WAV or OGG — first 4 seconds play)" value={c.intro.alarmFile} onChange={intro("alarmFile")} accept="audio/*" />
+                    )}
+                  </div>
+                )}
+                <label className="check">
+                  <input type="checkbox" checked={c.intro.askName} onChange={(e) => intro("askName")(e.target.checked)} />
+                  Ask visitors for their name and greet them personally
+                </label>
+                <div className="grid2">
+                  <Field label="Name prompt" value={c.intro.identify} onChange={intro("identify")} />
+                  <Field label="Greeting" value={c.intro.hello} onChange={intro("hello")} hint="Shown on the laptop screen before the welcome headline" />
+                </div>
+                <p className="muted small">
+                  Personal links: share <code>{"yoursite.com/?to=Priya"}</code> and the visitor is greeted by name without being asked.
+                </p>
+                <p className="muted small">Placeholders: <code>{"{visitor}"}</code> <code>{"{name}"}</code> <code>{"{role}"}</code> <code>{"{handle}"}</code> <code>{"{location}"}</code></p>
               </section>
               <section className="card">
                 <h2>1 · Boot log</h2>

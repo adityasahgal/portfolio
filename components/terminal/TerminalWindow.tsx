@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { Content } from "@/lib/content";
 import MatrixRain from "../MatrixRain";
 import HexPhoto from "../landing/HexPhoto";
+import { sfx } from "@/lib/sfx";
+import { visitorHandle } from "@/lib/visitor";
 import Session, { QUICK_CMDS, SessionHandle } from "./Session";
 
 type Tab = { id: number; title: string };
@@ -14,14 +16,16 @@ let tabSeq = 0;
  * macOS-style terminal window: traffic lights (close / minimise / zoom),
  * multiple independent tabs, drag by the title bar, double-click to zoom.
  */
-export default function TerminalWindow({ content, minimized, onClose, onMinimize, onRestore }: {
+export default function TerminalWindow({ content, visitor, minimized, onClose, onMinimize, onRestore }: {
   content: Content;
+  visitor: string;
   minimized: boolean;
   onClose: () => void;
   onMinimize: () => void;
   onRestore: () => void;
 }) {
   const { profile, stats } = content;
+  const user = visitorHandle(visitor) || profile.handle;
   const [tabs, setTabs] = useState<Tab[]>(() => [{ id: ++tabSeq, title: "zsh" }]);
   const [active, setActive] = useState(tabs[0].id);
   const [zoomed, setZoomed] = useState(false);
@@ -45,6 +49,7 @@ export default function TerminalWindow({ content, minimized, onClose, onMinimize
   }, [minimized, onMinimize]);
 
   const closeWindow = () => {
+    sfx.close();
     setClosing(true);
     setTimeout(onClose, 180);
   };
@@ -52,6 +57,7 @@ export default function TerminalWindow({ content, minimized, onClose, onMinimize
   const newTab = () => {
     if (tabs.length >= MAX_TABS) return;
     const t = { id: ++tabSeq, title: "zsh" };
+    sfx.tab();
     setTabs((ts) => [...ts, t]);
     setActive(t.id);
   };
@@ -66,6 +72,7 @@ export default function TerminalWindow({ content, minimized, onClose, onMinimize
     const rest = cur.filter((t) => t.id !== id);
     sessions.current.delete(id);
     if (!rest.length) return closeWindow();
+    sfx.tab();
     setTabs(rest);
     setActive((a) => (a === id ? rest[Math.min(i, rest.length - 1)].id : a));
   };
@@ -117,7 +124,7 @@ export default function TerminalWindow({ content, minimized, onClose, onMinimize
               <button className="l-zoom" onClick={() => setZoomed((z) => !z)} aria-label={zoomed ? "Restore size" : "Maximise window"}><span>{zoomed ? "↙" : "+"}</span></button>
             </div>
             <div className="tw-name">
-              <b>{profile.handle}@{profile.host}</b> — {activeTab?.title} — {fmt(uptime)}
+              <b>{user}@{profile.host}</b> — {activeTab?.title} — {fmt(uptime)}
             </div>
           </div>
 
@@ -179,6 +186,8 @@ export default function TerminalWindow({ content, minimized, onClose, onMinimize
                   key={t.id}
                   ref={(h) => { if (h) sessions.current.set(t.id, h); }}
                   content={content}
+                  user={user}
+                  visitor={visitor}
                   active={t.id === active && !minimized}
                   onExit={() => closeTab(t.id)}
                   onTitle={(title) => setTitle(t.id, title)}
